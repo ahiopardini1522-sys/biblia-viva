@@ -1,0 +1,39 @@
+plugins { id 'com.android.application' }
+
+android {
+    namespace 'com.bibliaviva.app'
+    compileSdk 34
+
+    defaultConfig {
+        applicationId 'com.bibliaviva.app'
+        minSdk 26
+        targetSdk 34
+        versionCode 1
+        versionName '1.0'
+    }
+
+    signingConfigs {
+        release {
+            storeFile file('bibliaviva.jks')
+            storePassword 'bibliaviva2026'
+            keyAlias 'bibliaviva'
+            keyPassword 'bibliaviva2026'
+        }
+    }
+
+    buildTypes {
+        release {
+            minifyEnabled false
+            signingConfig signingConfigs.release
+        }
+    }
+
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_17
+        targetCompatibility JavaVersion.VERSION_17
+    }
+}
+
+dependencies {
+    implementation 'androidx.core:core:1.13.1'
+}
