@@ -4,6 +4,10 @@ import android.app.Activity;
 import android.content.ClipData;
 import android.content.ClipboardManager;
 import android.content.Intent;
+import android.content.res.Configuration;
+import android.graphics.Color;
+import android.view.View;
+import android.view.Window;
 import android.net.Uri;
 import android.os.Bundle;
 import android.speech.tts.TextToSpeech;
@@ -38,6 +42,7 @@ public class MainActivity extends Activity {
         super.onCreate(savedInstanceState);
         web = new WebView(this);
         setContentView(web);
+        applyBars(systemDark());
 
         WebSettings s = web.getSettings();
         s.setJavaScriptEnabled(true);
@@ -92,6 +97,27 @@ public class MainActivity extends Activity {
 
         if (savedInstanceState != null) web.restoreState(savedInstanceState);
         else web.loadUrl("file:///android_asset/index.html");
+    }
+
+    private boolean systemDark() {
+        return (getResources().getConfiguration().uiMode & Configuration.UI_MODE_NIGHT_MASK) == Configuration.UI_MODE_NIGHT_YES;
+    }
+
+    private void applyBars(boolean dark) {
+        Window w = getWindow();
+        w.setStatusBarColor(dark ? Color.parseColor("#3A1420") : Color.parseColor("#6B1D2F"));
+        w.setNavigationBarColor(dark ? Color.parseColor("#141012") : Color.WHITE);
+        web.setBackgroundColor(dark ? Color.parseColor("#141012") : Color.WHITE);
+        int flags = w.getDecorView().getSystemUiVisibility();
+        if (dark) flags &= ~View.SYSTEM_UI_FLAG_LIGHT_NAVIGATION_BAR;
+        else flags |= View.SYSTEM_UI_FLAG_LIGHT_NAVIGATION_BAR;
+        w.getDecorView().setSystemUiVisibility(flags);
+    }
+
+    @Override
+    public void onConfigurationChanged(Configuration c) {
+        super.onConfigurationChanged(c);
+        js("window.onSysTheme&&onSysTheme()");
     }
 
     private void js(String code) {
@@ -177,6 +203,16 @@ public class MainActivity extends Activity {
             } catch (Exception e) {
                 return false;
             }
+        }
+
+        @JavascriptInterface
+        public boolean isSystemDark() {
+            return systemDark();
+        }
+
+        @JavascriptInterface
+        public void setDark(boolean dark) {
+            runOnUiThread(() -> applyBars(dark));
         }
 
         @JavascriptInterface

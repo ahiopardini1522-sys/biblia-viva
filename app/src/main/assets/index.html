@@ -12,7 +12,7 @@
    PICTURE: la tarjeta del versículo del día como página con cinta
    COLOUR and TYPE: vino #6b1d2f, blanco, cinta dorada; Literata para el texto, Figtree para la interfaz
    LAYOUT: app de celular con barra inferior; en pantallas anchas, columna centrada */
-:root{color-scheme:light dark;--bg:light-dark(#ffffff,#141012);--ink:light-dark(#22181b,#f1e9eb);--soft:light-dark(#6d5f63,#b7a8ad);--line:light-dark(#ece4e6,#2c2226);--card:light-dark(#f7f2f3,#1e171a);--wine:light-dark(#6b1d2f,#4a1421);--wine2:light-dark(#8a2a40,#6b1d2f);--gold:#d9a441;--fs:19px;--ff:'Literata',Georgia,serif}
+:root{color-scheme:light dark;--bg:light-dark(#ffffff,#141012);--ink:light-dark(#22181b,#f1e9eb);--soft:light-dark(#6d5f63,#b7a8ad);--line:light-dark(#ece4e6,#2c2226);--card:light-dark(#f7f2f3,#1e171a);--wine:light-dark(#6b1d2f,#4a1421);--wine2:light-dark(#8a2a40,#d0607a);--gold:#d9a441;--fs:19px;--ff:'Literata',Georgia,serif}
 :root[data-theme=light]{color-scheme:light}:root[data-theme=dark]{color-scheme:dark}
 *{box-sizing:border-box;min-width:0}
 body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.55 'Figtree',system-ui,sans-serif;overflow-x:clip}
@@ -21,6 +21,7 @@ button:focus-visible,input:focus-visible,textarea:focus-visible{outline:3px soli
 .app{max-width:720px;margin:0 auto;min-height:100vh;padding-bottom:84px}
 header{background:var(--wine);color:#fff;padding:14px 18px;display:flex;align-items:center;gap:10px;position:sticky;top:0;z-index:5}
 header h1{font:700 20px/1.1 'Figtree';margin:0;flex:1}
+.thBtn{width:44px;height:44px;border-radius:50%;color:#fff;display:grid;place-items:center}.thBtn svg{width:22px;height:22px;fill:none;stroke:#fff;stroke-width:1.8}
 header .ver{font-size:13px;opacity:.85;border:1px solid #ffffff55;border-radius:99px;padding:4px 10px}
 .view{display:none;padding:18px}.view.on{display:block}
 h2{font:700 24px/1.15 'Figtree';margin:6px 0 14px;text-wrap:balance}
@@ -116,7 +117,7 @@ textarea{width:100%;min-height:90px;font:16px/1.5 'Figtree';padding:10px;border-
 </head>
 <body>
 <div class="app">
-<header><h1 id="ttl">Biblia Viva</h1><span class="ver" id="verTag">RV 1909</span></header>
+<header><h1 id="ttl">Biblia Viva</h1><button class="thBtn" id="thBtn" aria-label="Cambiar a modo oscuro"></button><span class="ver" id="verTag">RV 1909</span></header>
 
 <section class="view on" id="v-inicio">
   <div class="day" id="day"></div>
@@ -153,6 +154,7 @@ textarea{width:100%;min-height:90px;font:16px/1.5 'Figtree';padding:10px;border-
 
 <section class="view" id="v-ajustes">
   <h2>Ajustes de lectura</h2>
+  <div class="set"><span>Tema</span><div class="tabs" style="margin:0"><button class="tab" data-th="auto">Automático</button><button class="tab" data-th="light">Claro</button><button class="tab" data-th="dark">Oscuro</button></div></div>
   <div class="set"><label for="fs">Tamaño de letra</label><input type="range" id="fs" min="15" max="28" value="19"></div>
   <div class="set"><span>Tipo de letra</span><div class="tabs" style="margin:0"><button class="tab on" data-f="serif">Clásica</button><button class="tab" data-f="sans">Moderna</button></div></div>
   <div class="set"><label for="rate">Velocidad de la voz</label><input type="range" id="rate" min="0.7" max="1.3" step="0.05" value="0.95"></div>
@@ -253,7 +255,7 @@ const $=s=>document.querySelector(s),$$=s=>[...document.querySelectorAll(s)];
 const esc=s=>String(s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 const norm=s=>s.normalize("NFD").replace(/[̀-ͯ]/g,"").toLowerCase();
 const key=(b,c,v)=>b+"|"+c+"|"+v;
-let S={pos:["Salmos",23],fav:{},hl:{},note:{},fs:19,ff:"serif",rate:0.95,plans:{},days:[],read:[],hist:[],planCtx:null,prayers:[],rbg:"normal"};
+let S={pos:["Salmos",23],fav:{},hl:{},note:{},fs:19,ff:"serif",rate:0.95,plans:{},days:[],read:[],hist:[],planCtx:null,prayers:[],rbg:"normal",theme:"auto"};
 try{Object.assign(S,JSON.parse(localStorage.getItem("bibliaViva")||"{}"))}catch(e){}
 const save=()=>{try{localStorage.setItem("bibliaViva",JSON.stringify(S))}catch(e){}};
 const toast=m=>{const t=$("#toast");t.textContent=m;t.classList.add("on");clearTimeout(t._h);t._h=setTimeout(()=>t.classList.remove("on"),1600)};
@@ -473,6 +475,22 @@ function renderPrayers(){
   <div class="row"><button class="pill ink" data-pr="ok" data-id="${p.id}">${p.ok?"Volver a pendiente":"✓ Respondida"}</button><button class="pill ink" data-pr="del" data-id="${p.id}">Borrar</button></div></div>`).join(""):`<div class="empty"><b>Tu diario de oración está vacío</b>Anotá tus pedidos y marcá cuando Dios responda.</div>`);
 }
 
+const TH0=document.documentElement.getAttribute("data-theme");
+const sysDark=()=>{try{if(window.Android&&Android.isSystemDark)return Android.isSystemDark()}catch(e){}return matchMedia("(prefers-color-scheme: dark)").matches};
+const isDark=()=>S.theme==="dark"||(S.theme==="auto"&&(document.documentElement.getAttribute("data-theme")==="dark"||(document.documentElement.getAttribute("data-theme")!=="light"&&sysDark())));
+const SUN='<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="4.5"/><path d="M12 2v2.5M12 19.5V22M2 12h2.5M19.5 12H22M4.9 4.9l1.8 1.8M17.3 17.3l1.8 1.8M4.9 19.1l1.8-1.8M17.3 6.7l1.8-1.8"/></svg>',MOON='<svg viewBox="0 0 24 24"><path d="M20 14.5A8 8 0 0 1 9.5 4a8 8 0 1 0 10.5 10.5z"/></svg>';
+function applyTheme(){
+  const r=document.documentElement;
+  if(S.theme==="auto"){if(window.Android)r.setAttribute("data-theme",sysDark()?"dark":"light");else if(TH0)r.setAttribute("data-theme",TH0);else r.removeAttribute("data-theme")}
+  else r.setAttribute("data-theme",S.theme);
+  const d=isDark();$("#thBtn").innerHTML=d?SUN:MOON;$("#thBtn").setAttribute("aria-label",d?"Cambiar a modo claro":"Cambiar a modo oscuro");
+  $$("[data-th]").forEach(x=>x.classList.toggle("on",x.dataset.th===S.theme));
+  try{window.Android&&Android.setDark&&Android.setDark(d)}catch(e){}
+}
+$("#thBtn").onclick=()=>{S.theme=isDark()?"light":"dark";save();applyTheme();toast(S.theme==="dark"?"Modo oscuro":"Modo claro")};
+$$("[data-th]").forEach(x=>x.onclick=()=>{S.theme=x.dataset.th;save();applyTheme()});
+window.onSysTheme=()=>{if(S.theme==="auto")applyTheme()};
+try{matchMedia("(prefers-color-scheme: dark)").addEventListener("change",()=>window.onSysTheme())}catch(e){}
 function applyPrefs(){
   document.documentElement.style.setProperty("--fs",S.fs+"px");
   document.documentElement.style.setProperty("--ff",S.ff==="serif"?"'Literata',Georgia,serif":"'Figtree',system-ui,sans-serif");
@@ -549,7 +567,7 @@ $("#bkShow").onclick=()=>{$("#bkBox").hidden=!$("#bkBox").hidden};
 $("#bkGo").onclick=()=>{try{const d=JSON.parse($("#bkTxt").value);if(!d||d.bibliaViva!==1)throw 0;delete d.bibliaViva;
   for(const k of ["fav","hl","note","plans"])if(d[k]&&typeof d[k]!=="object")throw 0;
   Object.assign(S,d);save();applyPrefs();applyRb();renderHome();$("#bkBox").hidden=true;$("#bkTxt").value="";toast("Datos restaurados")}catch(e){toast("Esa copia no es válida")}};
-applyPrefs();applyRb();renderHome();fillVers();if(S.ver&&S.ver!=="RV 1909 (muestra)")useVersion(S.ver);
+applyTheme();applyPrefs();applyRb();renderHome();fillVers();if(S.ver&&S.ver!=="RV 1909 (muestra)")useVersion(S.ver);
 }
 </script>
 </body>
