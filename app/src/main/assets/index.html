@@ -243,7 +243,8 @@ const MORE={
 "Apocalipsis":{21:{4:"Y limpiará Dios toda lágrima de los ojos de ellos; y la muerte no será más; y no habrá más llanto, ni clamor, ni dolor: porque las primeras cosas son pasadas."}}
 };
 for(const b in MORE)SAMPLE[b]=Object.assign(SAMPLE[b]||{},MORE[b]);
-let TX=SAMPLE,VER={name:"RV 1909 (muestra)",short:"RV 1909",long:"Reina-Valera 1909"};
+const BASE="Reina-Valera 1909",isBase=n=>!n||n===BASE||n==="RV 1909 (muestra)";
+let FULL=null,TX=SAMPLE,VER={name:BASE,short:"RV 1909",long:BASE};
 const verShort=()=>VER.short,verLong=()=>VER.long;
 const DAILY=[["Salmos",23,1],["Juan",3,16],["Isaías",41,10],["Filipenses",4,13],["Proverbios",3,5],["Jeremías",29,11],["Mateo",11,28],["Romanos",8,28],["Juan",14,6],["Salmos",121,2],["Josué",1,9],["Isaías",40,31],["Lamentaciones",3,23],["Mateo",6,33],["2 Timoteo",1,7],["Hebreos",11,1],["Salmos",91,1],["Efesios",2,8]];
 const TOPICS=[["Paz","Cuando hay ansiedad",["Filipenses",4,6]],["Ánimo","Cuando tenés miedo",["Isaías",41,10]],["Descanso","Cuando estás cansado",["Mateo",11,28]],["Amor","Cómo es el amor",["1 Corintios",13,4]],["Confianza","Para decidir",["Proverbios",3,5]],["Protección","Para el camino",["Salmos",91,1]],["Valentía","Para empezar algo",["Josué",1,9]],["Fuerzas","Cuando no das más",["Isaías",40,31]],["Sabiduría","Para pedir guía",["Santiago",1,5]],["Perdón","Para volver a empezar",["1 Juan",1,9]],["Esperanza","En el dolor",["Apocalipsis",21,4]],["Alabanza","Para dar gracias",["Salmos",100,1]]];
@@ -541,14 +542,14 @@ const tx=(mode,fn)=>idb().then(d=>new Promise((ok,no)=>{const t=d.transaction("v
 async function listVers(){try{return (await tx("readonly",s=>s.getAllKeys()))||[]}catch(e){return[]}}
 async function useVersion(name){
   stopSpeech();
-  if(!name||name==="RV 1909 (muestra)"){TX=SAMPLE;VER={name:"RV 1909 (muestra)",short:"RV 1909",long:"Reina-Valera 1909"}}
+  if(isBase(name)){TX=FULL||SAMPLE;VER={name:BASE,short:"RV 1909",long:BASE}}
   else{try{const rec=await tx("readonly",s=>s.get(name));if(!rec)throw 0;TX=rec.data;VER={name,short:rec.short,long:name}}catch(e){toast("No se pudo abrir esa versión");return useVersion(null)}}
   S.ver=VER.name;save();
-  const ft=document.querySelector("#v-inicio > p.muted");if(ft)ft.textContent=TX===SAMPLE?"Usando la muestra de la Reina-Valera 1909. Podés importar una Biblia completa desde Ajustes.":`Usando ${VER.long}, importada a este celular.`;indexAll();$("#verTag").textContent=VER.short;$("#delRow").hidden=TX===SAMPLE;
+  const ft=document.querySelector("#v-inicio > p.muted");if(ft)ft.textContent=TX===SAMPLE?"Cargando la Biblia completa…":TX===FULL?"Reina-Valera 1909 completa (dominio público, ortografía levemente actualizada). Podés importar otra versión desde Ajustes.":`Usando ${VER.long}, importada a este celular.`;indexAll();$("#verTag").textContent=VER.short;$("#delRow").hidden=isBase(VER.name);
   $("#preview").textContent=verse("Salmos",23,1)||verse("Juan",3,16)||"";
   renderHome();if($("#v-biblia").classList.contains("on"))renderReader();$("#q").oninput();await fillVers();
 }
-async function fillVers(){const ks=await listVers();$("#verSel").innerHTML=["RV 1909 (muestra)",...ks].map(k=>`<option ${k===VER.name?"selected":""}>${esc(k)}</option>`).join("")}
+async function fillVers(){const ks=await listVers();$("#verSel").innerHTML=[BASE,...ks].map(k=>`<option ${k===VER.name?"selected":""}>${esc(k)}</option>`).join("")}
 $("#verSel").onchange=e=>useVersion(e.target.value);
 $("#imp").onchange=async e=>{
   const f=e.target.files[0];e.target.value="";if(!f)return;toast("Leyendo archivo…");
@@ -567,7 +568,12 @@ $("#bkShow").onclick=()=>{$("#bkBox").hidden=!$("#bkBox").hidden};
 $("#bkGo").onclick=()=>{try{const d=JSON.parse($("#bkTxt").value);if(!d||d.bibliaViva!==1)throw 0;delete d.bibliaViva;
   for(const k of ["fav","hl","note","plans"])if(d[k]&&typeof d[k]!=="object")throw 0;
   Object.assign(S,d);save();applyPrefs();applyRb();renderHome();$("#bkBox").hidden=true;$("#bkTxt").value="";toast("Datos restaurados")}catch(e){toast("Esa copia no es válida")}};
-applyTheme();applyPrefs();applyRb();renderHome();fillVers();if(S.ver&&S.ver!=="RV 1909 (muestra)")useVersion(S.ver);
+applyTheme();applyPrefs();applyRb();renderHome();fillVers();if(!isBase(S.ver))useVersion(S.ver);
+/* Biblia completa RV 1909 (dominio público), en un archivo aparte */
+(function loadFull(){const sc=document.createElement("script");sc.src="rv1909.js";
+  sc.onload=()=>{const R=window.RV1909;if(!R)return;FULL={};for(const b in R){const o={};R[b].forEach((ch,ci)=>{const vo={};ch.forEach((t,vi)=>{if(t)vo[vi+1]=t});o[ci+1]=vo});FULL[b]=o}
+    delete window.RV1909;if(isBase(S.ver)||TX===SAMPLE&&isBase(VER.name))useVersion(null)};
+  sc.onerror=()=>{};document.body.appendChild(sc)})();
 }
 </script>
 </body>
